@@ -10,12 +10,15 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import client.model.Photo;
 
 @Service
 public class PhotoService {
+
+	private final static String FILE_PATH = "InputImages/flowers-04.jpg";
 
 	@Autowired
 	private Environment env;
@@ -29,9 +32,8 @@ public class PhotoService {
 		restTemplate = new RestTemplate();
 	}
 
-	public Photo getPhoto(String photoId) {
-		String apiBaseUrl = env.getProperty("rest.api.base.url");
-		String url = apiBaseUrl + "photo/photo/{photoId}";
+	public Photo getPhoto(String photoId) throws HttpStatusCodeException {
+		String url = getBaseUrl() + "photo/photo/{photoId}";
 
 		Map<String, String> params = new HashMap<String, String>();
 		params.put("photoId", photoId);
@@ -39,22 +41,25 @@ public class PhotoService {
 		return restTemplate.getForObject(url, Photo.class, params);
 	}
 
-	public Photo createPhoto() {
-		Photo photo = new Photo();
-		String apiBaseUrl = env.getProperty("rest.api.base.url");
-		String url = apiBaseUrl + "photo/create";
+	public Photo createPhoto() throws HttpStatusCodeException, IOException {
+		String url = getBaseUrl() + "photo/create";
 
-		Resource resource = resourceLoader
-				.getResource("classpath:InputImages/flowers-04.jpg");
-		try {
-			File file = resource.getFile();
-			byte[] data = new byte[(int) file.length()];
-			photo.setData(data);
-			photo.setImageName(resource.getFilename());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		File file = getImage();
+		byte[] data = new byte[(int) file.length()];
+
+		Photo photo = new Photo();
+		photo.setData(data);
+		photo.setImageName(file.getName());
 
 		return restTemplate.postForObject(url, photo, Photo.class);
+	}
+
+	private File getImage() throws IOException {
+		Resource re = resourceLoader.getResource("classpath:" + FILE_PATH);
+		return re.getFile();
+	}
+
+	private String getBaseUrl() {
+		return env.getProperty("rest.api.base.url");
 	}
 }

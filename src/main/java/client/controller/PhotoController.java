@@ -1,5 +1,7 @@
 package client.controller;
 
+import java.io.IOException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -8,6 +10,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.client.HttpStatusCodeException;
 
 import client.model.Photo;
 import client.service.PhotoService;
@@ -26,7 +29,12 @@ public class PhotoController {
 		if (id == null) {
 			return new ResponseEntity<Photo>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-		Photo photo = photoService.getPhoto(id);
+		Photo photo = null;
+		try {
+			photo = photoService.getPhoto(id);
+		} catch (HttpStatusCodeException e) {
+			e.printStackTrace();
+		}
 		if (photo == null) {
 			return new ResponseEntity<Photo>(HttpStatus.NOT_FOUND);
 		}
@@ -35,7 +43,13 @@ public class PhotoController {
 
 	@RequestMapping(value = "create", method = RequestMethod.POST)
 	public ResponseEntity<Photo> createPhoto() {
-		photoService.createPhoto();
+		try {
+			photoService.createPhoto();
+		} catch (HttpStatusCodeException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		return new ResponseEntity<Photo>(HttpStatus.CREATED);
 	}
 }
